@@ -34,8 +34,8 @@ if first_exercise:
     cv2.imshow("", D_R_scaled)
     cv2.waitKey(0)
 
-    cv2.imwrite("output/ps2-1-a-3.png", D_L_scaled)
-    cv2.imwrite("output/ps2-1-a-4.png", D_R_scaled)
+    cv2.imwrite("output/ps2-1-a-5.png", D_L_scaled)
+    cv2.imwrite("output/ps2-1-a-6.png", D_R_scaled)
 # TODO: Rest of your code here
 if second_exercise:
     L_rgb = cv2.imread(os.path.join('input', 'pair1-L.png'))   # grayscale, [0, 1]
@@ -44,6 +44,6 @@ if second_exercise:
     R = cv2.cvtColor(R_rgb, cv2.COLOR_BGR2GRAY) * (1.0 / 255.0)
     D_L = disparity_ssd(L, R)
     cv2.imshow( "actual image",D_L)
-    cv2.imwrite("output/ps2-3-a-1 real picture save.png", D_L)
+    cv2.imwrite("output/ps2-3-a-1-othermatch.png", D_L)
 
 
