@@ -33,7 +33,7 @@ def disparity_ssd(L, R):
         for colIdx in range(L.shape[1]):
             colIdx += offset # padding
             patch_left = left_slice[:, colIdx - offset:colIdx + offset + 1]
-            sq_diff = ssd_template(offset, patch_left, right_slice) # THIS IS SLOW
+            #sq_diff = ssd_template(offset, patch_left, right_slice) # THIS IS SLOW
             sq_diff = cv2.matchTemplate(right_slice, patch_left, method=cv2.TM_SQDIFF_NORMED)
             best_match_idx = np.argmin(sq_diff) # not a padded number
             disparity = (colIdx - offset) - best_match_idx
