@@ -37,8 +37,8 @@ if first_exercise:
     cv2.imshow("", D_R_scaled)
     cv2.waitKey(0)
 
-    cv2.imwrite("output/ps2-1-a-8.png", D_L_scaled)
-    cv2.imwrite("output/ps2-1-a-7.png", D_R_scaled)
+    cv2.imwrite("output/ps2-1-a-limited_window2.png", D_L_scaled)
+    cv2.imwrite("output/ps2-1-a-limited_window1.png", D_R_scaled)
 # TODO: Rest of your code here
 if second_exercise:
     L_rgb = cv2.imread(os.path.join('input', 'pair1-L.png'))   # grayscale, [0, 1]

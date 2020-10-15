@@ -16,6 +16,7 @@ def disparity_ssd(L, R):
     Returns: Disparity map, same size as L, R
     """
     windowSize = 5
+    disparity_window = 30
     offset = math.floor(windowSize / 2)
 
     R_mod = cv2.copyMakeBorder(R, offset, offset, offset, offset, cv2.BORDER_REFLECT_101).astype('float32')
@@ -28,14 +29,22 @@ def disparity_ssd(L, R):
         print("calculate line", lineIdx, "out of", L.shape[0])
         # get slice
         lineIdx += offset # image padding
-        right_slice = R_mod[lineIdx - offset:lineIdx + offset + 1, :]
-        left_slice = L_mod[lineIdx - offset:lineIdx + offset + 1, :]
+        lineMin = lineIdx - offset
+        lineMax = lineIdx + offset + 1
         for colIdx in range(L.shape[1]):
             colIdx += offset # padding
-            patch_left = left_slice[:, colIdx - offset:colIdx + offset + 1]
+            disp_step = math.floor(disparity_window / 2)
+            colLeftMin = colIdx - offset
+            colLeftMax = colIdx + offset + 1
+            colRightMin = max(0, colLeftMin - disp_step)
+            colRightMax = min(R_mod.shape[1] - 1, colLeftMax + disp_step)
+            right_slice = R_mod[lineMin:lineMax, colRightMin:colRightMax]
+
+            patch_left = L_mod[lineMin:lineMax, colLeftMin:colLeftMax]
             #sq_diff = ssd_template(offset, patch_left, right_slice) # THIS IS SLOW
             sq_diff = cv2.matchTemplate(right_slice, patch_left, method=cv2.TM_SQDIFF_NORMED)
-            best_match_idx = np.argmin(sq_diff) # not a padded number
+
+            best_match_idx = np.argmin(sq_diff) + colRightMin # offset due to right slice size
             disparity = (colIdx - offset) - best_match_idx
             best_matches[lineIdx - offset][colIdx - offset] = best_match_idx
             D[lineIdx - offset][colIdx - offset] = disparity
