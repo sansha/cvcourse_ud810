@@ -12,8 +12,8 @@ R = cv2.imread(os.path.join('input', 'pair0-R.png'), 0) * (1.0 / 255.0)
 from disparity_ssd import disparity_ssd
 
 first_exercise = False
-second_exercise = True
-third_exercise = False
+second_exercise = False
+third_exercise = True
 if first_exercise:
     L = cv2.imread(os.path.join('input', 'pair0-L.png'), 0) * (1.0 / 255.0)  # grayscale, [0, 1]
     R = cv2.imread(os.path.join('input', 'pair0-R.png'), 0) * (1.0 / 255.0)
@@ -77,6 +77,6 @@ if third_exercise:
     cv2.waitKey(0)
     cv2.imshow("scaled", D_L_scaled)
     cv2.waitKey(0)
-    cv2.imwrite("output/ps2-3-a-1-ncorr-biggerwindow.png", (D_L_scaled * 255).astype('uint8'))
+    cv2.imwrite("output/ps2-3-a-1-ncorr-test1.png", (D_L_scaled * 255).astype('uint8'))
 
 
