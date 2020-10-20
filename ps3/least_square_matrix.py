@@ -1,7 +1,7 @@
 import numpy as np
 
 def least_square_matrix(points2d, points3d):
-    print("heavy algorithm")
+    #print("heavy algorithm")
 
     A = np.zeros((points2d.shape[0] * 2, 12))
     for i in range(points2d.shape[0]):
