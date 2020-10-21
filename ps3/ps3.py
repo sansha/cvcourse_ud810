@@ -65,23 +65,66 @@ def task2(num_points):
     return bestM, all_residuals
 
 
-task1()
+#task1()
 
-Ms = []
-for num_points in [8, 12, 16]:
-    bestM, residuals = task2(num_points=8)
-    C = compute_center(bestM)
-    print(C)
- #   Ms.append(bestM)
-    #np.savetxt("output/M_pic_best_" + str(num_points) + ".txt", bestM)
-    #np.savetxt("output/residuals_pic_best_" + str(num_points) + ".txt", residuals)
+# Ms = []
+# for num_points in [8, 12, 16]:
+#     bestM, residuals = task2(num_points=8)
+#     C = compute_center(bestM)
+#     print(C)
+#  #   Ms.append(bestM)
+#     #np.savetxt("output/M_pic_best_" + str(num_points) + ".txt", bestM)
+#     #np.savetxt("output/residuals_pic_best_" + str(num_points) + ".txt", residuals)
+#
+# points2d_all = np.loadtxt("input/pts2d-pic_b.txt")
+# points3d_all = np.loadtxt("input/pts3d.txt")
+# M = least_square_matrix(points2d_all, points3d_all)
+# C = compute_center(M)
+# print(C)
+from fundamental_matrix import fundamental_matrix, reduce_rank
+import cv2
 
-points2d_all = np.loadtxt("input/pts2d-pic_b.txt")
-points3d_all = np.loadtxt("input/pts3d.txt")
-M = least_square_matrix(points2d_all, points3d_all)
-C = compute_center(M)
-print(C)
+def to_normal(epipoint):
+    assert epipoint.shape == (3,)
+    return (int(epipoint[0] / epipoint[2]), int(epipoint[1] / epipoint[2]))
 
+def task3():
+    pts1 = np.loadtxt("input/pts2d-pic_a.txt")
+    pts2 = np.loadtxt("input/pts2d-pic_b.txt")
+    M = fundamental_matrix(pts1, pts2)
+    print(M)
+    print(np.linalg.matrix_rank(M))
+
+    F = reduce_rank(M)
+    print(F)
+    print(np.linalg.matrix_rank(F))
+    epipolar_lines_b = np.zeros((pts1.shape[0], 3)) # store epipolar lines
+    epipolar_lines_a = np.zeros((pts1.shape[0], 3)) # store epipolar lines
+
+    for i in range(pts1.shape[0]):
+        epipolar_lines_b[i] = F @ np.append(pts1[i], 1) # from a to b
+        epipolar_lines_a[i] = F @ np.append(pts2[i], 1) # from b to a
+    img_a = cv2.imread("input/pic_a.jpg")
+    print(img_a.shape)
+    P_UL = [0, 0, 1]
+    P_BL = [img_a.shape[0] - 1, 0, 1]
+    P_UR = [0, img_a.shape[1] - 1, 1]
+    P_BR = [img_a.shape[0] - 1, img_a.shape[1] - 1, 1]
+    l_L = np.cross(P_UL, P_BL)
+    l_R = np.cross(P_UR, P_BR)
+    window_name = 'Image'
+    color = (0, 255, 0)
+    for i in range(pts1.shape[0]):
+        pt_left = np.cross(epipolar_lines_a[i], l_L)
+        pt_right = np.cross(epipolar_lines_a[i], l_R)
+        ptl = to_normal(pt_left)
+        ptr = to_normal(pt_right)
+        cv2.line(img_a, ptl, ptr, color)
+
+    cv2.imshow(window_name, img_a)
+    cv2.waitKey(0)
+
+task3()
 
 # reference M
 # points2d = np.loadtxt("input/pts2d-pic_b.txt")
