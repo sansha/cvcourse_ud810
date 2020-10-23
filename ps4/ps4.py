@@ -26,13 +26,49 @@ def task1_a():
     save_normalized("output/simA-gradient_pair.png", simA_grad_scaled)
 
 def task1_b():
+    recompute = False
+
     transA = cv2.imread("input/transA.jpg")
+    transB = cv2.imread("input/transB.jpg")
     simA = cv2.imread("input/simA.jpg")
+    simB = cv2.imread("input/simB.jpg")
+
     check = cv2.imread("input/check.bmp")
     ## CREATE GRADIENT PAIRS ##################################################
+    transA = cv2.cvtColor(transA, cv2.COLOR_BGR2GRAY)
+    transB = cv2.cvtColor(transB, cv2.COLOR_BGR2GRAY)
+    simA = cv2.cvtColor(simA, cv2.COLOR_BGR2GRAY)
+    simB = cv2.cvtColor(simB, cv2.COLOR_BGR2GRAY)
+    if recompute:
+        transA_harris = h.compute_harris(transA)
+        np.savetxt("output/transA_harris.txt", transA_harris)
+        h.save_normalized("output/transA_harris.png", transA_harris)
+        ##
+        transB_h = h.compute_harris(transB)
+        np.savetxt("output/transB_harris.txt", transB_h)
+        h.save_normalized("output/transB_harris.png", transB_h)
+        ##
+        simA_h = h.compute_harris(simA)
+        np.savetxt("output/simA_harris.txt", simA_h)
+        h.save_normalized("output/simA_harris.png", simA_h)
+        ##
+        simB_h = h.compute_harris(simB)
+        np.savetxt("output/simB_harris.txt", simB_h)
+        h.save_normalized("output/simB_harris.png", simB_h)
+    else:
+        transA_harris = np.loadtxt("output/transA_harris.txt")
+        transB_h = np.loadtxt("output/transB_harris.txt")
+        simA_h = np.loadtxt("output/simA_harris.txt")
+        simB_h = np.loadtxt("output/simB_harris.txt")
 
-    transA_harris = h.compute_harris(transA)
-    save_normalized("transA_harris.png", transA_harris)
+    transA_corner_matrix = h.find_corner_in_harris(transA_harris)
+    composite_transA = np.zeros(transA.shape + (3,)).astype('float')
+    composite_transA[:,:,0] = transA
+    composite_transA[:,:, 1] = transA_corner_matrix
+    h.save_normalized("output/tansA_composite.png",composite_transA)
+    print("bla")
 
-task1_a()
+    #transB_harris = h.compute_harris(transB)
+
+#task1_a()
 task1_b()
