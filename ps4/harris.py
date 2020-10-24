@@ -30,7 +30,9 @@ def compute_gradients(img, sigma=0, filter_size=9):
 def compute_second_moment_matrix(pos, grad_x, grad_y, window_size=9):
     assert window_size % 2 == 1
 
-    window = np.ones((window_size, window_size))
+    #window = np.ones((window_size, window_size))
+    gaussian = cv2.getGaussianKernel(window_size, 0)
+    window = np.transpose(gaussian) * gaussian
     offset = int(np.floor(window_size / 2))
     M = np.zeros((2,2))
     grad_x_pad = cv2.copyMakeBorder(grad_x, offset, offset, offset, offset, cv2.BORDER_CONSTANT, value=0)
@@ -57,13 +59,13 @@ def compute_harris_value(M, alpha=0.04):
     return det - alpha * (trace ** 2)
 
 
-def compute_harris(img):
-    grad_x, grad_y = compute_gradients(img)
+def compute_harris(img, sigma=0, gauss_window=9, moment_window=9):
+    grad_x, grad_y = compute_gradients(img, sigma, gauss_window)
     harris_img = np.zeros_like(img).astype('float')
     for i in range(img.shape[0]):
         print("computing line ", i + 1, " of ", img.shape[0])
         for j in range(img.shape[1]):
-            M = compute_second_moment_matrix((i,j), grad_x, grad_y)
+            M = compute_second_moment_matrix((i,j), grad_x, grad_y, moment_window)
             harris_img[i, j] = compute_harris_value(M)
 
     return harris_img
@@ -80,11 +82,11 @@ def non_max_suppression(img, radius=9):
                 img[i, j] = 0
     return img
 
-def find_corner_in_harris(img, threshold=0.3):
+def find_corner_in_harris(img, threshold=0.1, radius=9):
     img = normalize(img)
     _, thresh = cv2.threshold(img.astype('float32'), threshold, 1.0, cv2.THRESH_TOZERO)
-    save_normalized("thresh.png", thresh)
-    max = non_max_suppression(thresh)
-    save_normalized("max.png", max)
+    #save_normalized("thresh.png", thresh)
+    max = non_max_suppression(thresh, radius=radius)
+    #save_normalized("max.png", max)
     return max
 

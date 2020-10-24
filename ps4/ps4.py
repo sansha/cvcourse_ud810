@@ -40,32 +40,44 @@ def task1_b():
     simA = cv2.cvtColor(simA, cv2.COLOR_BGR2GRAY)
     simB = cv2.cvtColor(simB, cv2.COLOR_BGR2GRAY)
     if recompute:
-        transA_harris = h.compute_harris(transA)
-        np.savetxt("output/transA_harris.txt", transA_harris)
-        h.save_normalized("output/transA_harris.png", transA_harris)
-        ##
-        transB_h = h.compute_harris(transB)
-        np.savetxt("output/transB_harris.txt", transB_h)
-        h.save_normalized("output/transB_harris.png", transB_h)
-        ##
-        simA_h = h.compute_harris(simA)
-        np.savetxt("output/simA_harris.txt", simA_h)
-        h.save_normalized("output/simA_harris.png", simA_h)
-        ##
-        simB_h = h.compute_harris(simB)
-        np.savetxt("output/simB_harris.txt", simB_h)
-        h.save_normalized("output/simB_harris.png", simB_h)
-    else:
-        transA_harris = np.loadtxt("output/transA_harris.txt")
-        transB_h = np.loadtxt("output/transB_harris.txt")
-        simA_h = np.loadtxt("output/simA_harris.txt")
-        simB_h = np.loadtxt("output/simB_harris.txt")
 
-    transA_corner_matrix = h.find_corner_in_harris(transA_harris)
+        for gauss_window in [5, 7, 9]:
+            transA_harris = h.compute_harris(transA, gauss_window=gauss_window)
+            filename = "output/transA_harris_gauss" + str(gauss_window)
+            np.savetxt(filename + ".txt", transA_harris)
+            h.save_normalized(filename + ".png", transA_harris)
+
+        for moment_win in [5, 7, 9]:
+            transA_harris = h.compute_harris(transA, moment_window=moment_win)
+            filename = "output/transA_harris_moment" + str(moment_win)
+            np.savetxt(filename + ".txt", transA_harris)
+            h.save_normalized(filename + ".png", transA_harris)
+        ##
+        # transB_h = h.compute_harris(transB)
+        # np.savetxt("output/transB_harris.txt", transB_h)
+        # h.save_normalized("output/transB_harris.png", transB_h)
+        # ##
+        # simA_h = h.compute_harris(simA)
+        # np.savetxt("output/simA_harris.txt", simA_h)
+        # h.save_normalized("output/simA_harris.png", simA_h)
+        # ##
+        # simB_h = h.compute_harris(simB)
+        # np.savetxt("output/simB_harris.txt", simB_h)
+        # h.save_normalized("output/simB_harris.png", simB_h)
+    else:
+        transA_harris = np.loadtxt("output/transA_harris_moment5.txt")
+        mom7 = np.loadtxt("output/transA_harris_moment7.txt")
+        mom9 = np.loadtxt("output/transA_harris_moment9.txt")
+
+        #transB_h = np.loadtxt("output/transB_harris.txt")
+        #simA_h = np.loadtxt("output/simA_harris.txt")
+        #simB_h = np.loadtxt("output/simB_harris.txt")
+
+    transA_corner_matrix = h.find_corner_in_harris(transA_harris, threshold=0.5, radius=3)
     composite_transA = np.zeros(transA.shape + (3,)).astype('float')
     composite_transA[:,:,0] = transA
-    composite_transA[:,:, 1] = transA_corner_matrix
-    h.save_normalized("output/tansA_composite.png",composite_transA)
+    _, composite_transA[:,:, 1] = cv2.threshold((transA_corner_matrix * 255.0).astype('uint8'), 1, 255, cv2.THRESH_BINARY)
+    h.save_normalized("output/tansA_composite_mom7_rad3_thresh05.png",composite_transA)
     print("bla")
 
     #transB_harris = h.compute_harris(transB)
