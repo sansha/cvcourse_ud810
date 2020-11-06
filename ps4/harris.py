@@ -59,16 +59,16 @@ def compute_harris_value(M, alpha=0.04):
     return det - alpha * (trace ** 2)
 
 
-def compute_harris(img, sigma=0, gauss_window=9, moment_window=9):
+def compute_harris(img, sigma=0, gauss_window=9, moment_window=9, alpha=0.04):
     grad_x, grad_y = compute_gradients(img, sigma, gauss_window)
     harris_img = np.zeros_like(img).astype('float')
     for i in range(img.shape[0]):
         print("computing line ", i + 1, " of ", img.shape[0])
         for j in range(img.shape[1]):
             M = compute_second_moment_matrix((i,j), grad_x, grad_y, moment_window)
-            harris_img[i, j] = compute_harris_value(M)
+            harris_img[i, j] = compute_harris_value(M, alpha)
 
-    return harris_img
+    return harris_img, grad_x, grad_y
 
 def non_max_suppression(img, radius=9):
     assert radius % 2 == 1
@@ -90,3 +90,10 @@ def find_corner_in_harris(img, threshold=0.1, radius=9):
     #save_normalized("max.png", max)
     return max
 
+def get_list_from_corner_img(img, thresh = 1.0):
+    corners = []
+    for i in img.shape[0]:
+        for j in img.shape[1]:
+            if img[i, j] >= thresh:
+                corners.append((i, j))
+    return corners
