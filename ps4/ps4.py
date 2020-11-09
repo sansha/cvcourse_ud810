@@ -2,6 +2,7 @@ import harris as h
 import cv2
 import numpy as np
 import sift
+import ransac
 
 def save_normalized(filename, img, float_normalize=True):
     if float_normalize:
@@ -18,7 +19,7 @@ def task1_a():
     ## CREATE GRADIENT PAIRS ##################################################
     transA_grad_x, transA_grad_y = h.compute_gradients(transA, filter_size=5)
     simA_grads = h.compute_gradients(simA, filter_size=5)
-    #grad_x, grad_y = h.normalize(grad_x), h.normalize(grad_y)
+    # grad_x, grad_y = h.normalize(grad_x), h.normalize(grad_y)
     transA_gradient_pair = np.hstack((transA_grad_x, transA_grad_y))
     simA_gradient_pair = np.hstack(simA_grads)
     simA_grad_scaled = h.normalize(simA_gradient_pair)
@@ -33,6 +34,8 @@ def task1_a():
 # todo: find corner in harris threshold & radios tests
 gauss_window_size = 5
 h_moment_window_size = 7
+
+
 def task1_b():
     recompute = False
     check = cv2.imread("input/check.bmp")
@@ -58,7 +61,8 @@ def task1_b():
         for i in range(4, len(fnames)):
             filename = "output/" + fnames[i] + "_harris"
             print("calculate ", filename)
-            harris, gradx, grady = h.compute_harris(input[i], gauss_window=gauss_window_size, moment_window=h_moment_window_size)
+            harris, gradx, grady = h.compute_harris(input[i], gauss_window=gauss_window_size,
+                                                    moment_window=h_moment_window_size)
             np.savetxt(filename + ".txt", harris)
             np.savetxt(filename + "_gradx.txt", gradx)
             np.savetxt(filename + "_grady.txt", grady)
@@ -78,9 +82,9 @@ def task1_b():
     else:
         transA_harris = np.loadtxt("output/transA_harris_final.txt")
 
-        #transB_h = np.loadtxt("output/transB_harris.txt")
-        #simA_h = np.loadtxt("output/simA_harris.txt")
-        #simB_h = np.loadtxt("output/simB_harris.txt")
+        # transB_h = np.loadtxt("output/transB_harris.txt")
+        # simA_h = np.loadtxt("output/simA_harris.txt")
+        # simB_h = np.loadtxt("output/simB_harris.txt")
 
     # for thresh in [0.3, 0.5, 0.7]:
     #     transA_corner_matrix = h.find_corner_in_harris(transA_harris, threshold=thresh, radius=3)
@@ -91,7 +95,8 @@ def task1_b():
     #     h.save_normalized(fname + ".png", composite_transA)
     #     print("bla")
 
-    #transB_harris = h.compute_harris(transB)
+    # transB_harris = h.compute_harris(transB)
+
 
 # def mark_harris_corners(fname, threshold, radius):
 #     basename = "output/harris_imgs/" + fname + "_harris"
@@ -105,10 +110,6 @@ def task1_b():
 #     raw_img //= 2
 #     raw_img[:,:, 1] += corners
 #     cv2.imwrite("output/" + fname + "_harris_marked.png", corners)
-
-
-
-
 
 
 def task2_a():
@@ -134,8 +135,23 @@ def task2_b():
     fname_pairs = [("check", "check_rot"), ("transA", "transB"), ("simA", "simB")]
     input_pairs = [(check, check_rot), (transA, transB), (simA, simB)]
     for i in range(len(fname_pairs)):
-        sift.calc_matching_pairs(fname_pairs[i], input_pairs[i])
+        sift.calc_matching_pairs(fname_pairs[i], input_pairs[i], draw_pairs=True)
 
 
-#task1_a()
-task2_b()
+def task3_a():
+    transA = cv2.imread("input/transA.jpg")
+    transB = cv2.imread("input/transB.jpg")
+    matches, A_points, B_points = sift.calc_matching_pairs(("transA", "transB"), (transA, transB))
+    np.save("output/matches/trans.txt", matches)
+    np.save("output/matches/transA_points", A_points)
+    np.save("output/matches/transB_points", B_points)
+    best_transform, inliers, outliers = ransac.ransac_transform(matches, pointsA=A_points, pointsB=B_points)
+    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
+    cv2.imwrite("output/ransac/transA_inliers.png", match_img)
+    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
+    cv2.imwrite("output/ransac/transA_outliers.png", match_img)
+
+
+# task1_a()
+# task2_b()
+task3_a()

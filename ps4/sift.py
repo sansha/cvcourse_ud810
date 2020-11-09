@@ -67,14 +67,16 @@ def drawMatches(img1, points1, img2, points2, matches):
         cv2.line(img, p1, p2, color, 1)
     return img
 
-def calc_matching_pairs(fname_pair, img_pair):
+def calc_matching_pairs(fname_pair, img_pair, draw_pairs = False):
     A_points, A_descriptors = get_sift_descriptors(fname_pair[0], img_pair[0])
     B_points, B_descriptors = get_sift_descriptors(fname_pair[1], img_pair[1])
 
     bfm = cv2.BFMatcher()
     matches = bfm.match(A_descriptors, B_descriptors)
     ## this is cheating but check if it works
-    #match_img = cv2.drawMatches(img_pair[0], A_points, img_pair[1], B_points, matches, None)
-    match_img = drawMatches(img_pair[0], A_points, img_pair[1], B_points, matches)
-    cv2.imwrite(fname_pair[0] + "_matches_custom.png", match_img)
+    if draw_pairs:
+        # match_img = cv2.drawMatches(img_pair[0], A_points, img_pair[1], B_points, matches, None)
+        match_img = drawMatches(img_pair[0], A_points, img_pair[1], B_points, matches)
+        cv2.imwrite(fname_pair[0] + "_matches_custom.png", match_img)
+    return matches, A_points, B_points
 
