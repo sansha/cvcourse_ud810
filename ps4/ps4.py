@@ -4,6 +4,7 @@ import numpy as np
 import sift
 import ransac
 
+
 def save_normalized(filename, img, float_normalize=True):
     if float_normalize:
         norm = h.normalize(img)
@@ -152,6 +153,44 @@ def task3_a():
     cv2.imwrite("output/ransac/transA_outliers.png", match_img)
 
 
+def task3_a2():  # TODO
+    transA = cv2.imread("input/check.bmp")
+    transB = cv2.imread("input/check_rot.bmp")
+    matches, A_points, B_points = sift.calc_matching_pairs(("check", "check_rot"), (transA, transB))
+    np.save("output/matches/check.txt", matches)
+    np.save("output/matches/check_points", A_points)
+    np.save("output/matches/check_rot_points", B_points)
+    best_transform, inliers, outliers = ransac.ransac_transform(matches, pointsA=A_points, pointsB=B_points,
+                                                                tolerance=5000)
+    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
+    cv2.imwrite("output/ransac/check_inliers.png", match_img)
+    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
+    cv2.imwrite("output/ransac/check_outliers.png", match_img)
+
+
+def task3_b():
+    recalc = True
+    transA = cv2.imread("input/simA.jpg")
+    transB = cv2.imread("input/simB.jpg")
+    if recalc:
+        matches, A_points, B_points = sift.calc_matching_pairs(("simA", "simB"), (transA, transB))
+        np.save("output/matches/sim", matches)
+        np.save("output/matches/simA_points", A_points)
+        np.save("output/matches/simB_points", B_points)
+    else:
+        # m#atches  = np.load("output/matches/sim.npy")
+        A_points = np.load("output/matches/simA_points")
+        B_points = np.load("output/matches/simB_points")
+
+    for tolerance in [10000, 5000, 4000, 3000, 2000, 1000, 500, 200]:
+        best_transform, inliers, outliers = ransac.ransac_similarity(matches, pointsA=A_points, pointsB=B_points,
+                                                                    tolerance=tolerance)
+        match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
+        cv2.imwrite("output/ransac/simA_inliers" + str(tolerance) + ".png", match_img)
+        match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
+        cv2.imwrite("output/ransac/simB_outliers" + str(tolerance) + ".png", match_img)
+
+
 # task1_a()
 # task2_b()
-task3_a()
+task3_b()

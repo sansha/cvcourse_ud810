@@ -28,7 +28,7 @@ def ransac_get_inliers(matched_keypoints,
     :param tolerance: defines when a point is considered inlier
     :return: best match, inliers, outliers
     """
-    desired_confidence = 0.99
+    desired_confidence = 0.9999
     outlier_percentage = 1.0  # init with worst case
     num_samples = 0
     best_match = None
@@ -37,9 +37,10 @@ def ransac_get_inliers(matched_keypoints,
     best_transform = None
     inliers, outliers = {}, {}
     N = np.inf
+    abort_printed = False
     while N > num_samples:
         # get samples
-        matches = np.random.choice(matched_keypoints, num_samples_per_draw, replace=False)
+        matches = np.random.choice(matched_keypoints, num_samples_per_draw, replace=True)
         # calc transform
         transform = get_transform(matches, pointsA, pointsB)
         # calc inliers / outliers
@@ -54,8 +55,14 @@ def ransac_get_inliers(matched_keypoints,
             best_transform = transform
             # update N
             outlier_percentage = len(outliers) / (len(inliers) + len(outliers))
+            print("new outlier percentage:", outlier_percentage)
             N = calc_N(desired_confidence, outlier_percentage, 2)
-
+        if N <= num_samples and not abort_printed:
+            print("would have aborted after", num_samples, "iterations")
+            print("with num inliers:", len(best_inliers), "of", len(matched_keypoints))
+            abort_printed = True
+    print("found result after", num_samples, "iterations")
+    print("num inliers:", len(best_inliers), "of", len(matched_keypoints))
     return best_match, best_transform, best_inliers, best_outliers
 
 
@@ -66,7 +73,7 @@ def calc_inliers_outliers(func, matches, pointsA, pointsB, tolerance):
         expected = np.array(pointsB[match.trainIdx].pt)
         actual = np.array(func(pointsA[match.queryIdx].pt))
         distance = np.sum((expected - actual) ** 2)
-        print(distance)
+        #print(distance)
         if distance < tolerance:
             inliers.add(match)
         else:
@@ -74,6 +81,8 @@ def calc_inliers_outliers(func, matches, pointsA, pointsB, tolerance):
 
     return inliers, outliers
 
+
+## TRANSFORM SPECIFIC FUNCTIONS
 
 def get_transform_transformation(matched_keypoint, pointsA, pointsB):
     assert len(matched_keypoint) == 1
@@ -100,4 +109,94 @@ def ransac_transform(matched_keypoints,
                                                                        desired_confidence=desired_confidence,
                                                                        tolerance=tolerance)
     ## TODO calculate overall best match
+    return best_transform, inliers, outliers
+
+
+## SIMILARITY SPECIFIC FUNCTIONS
+
+def get_transform_similarity(matched_keypoint, pointsA, pointsB):
+    assert len(matched_keypoint) == 2
+    ## 1st step: solve linear equation for 4 variables
+    A = np.zeros((4, 4))
+    b = np.zeros((4,1))
+    points = [
+        (pointsA[matched_keypoint[0].queryIdx],
+         pointsB[matched_keypoint[0].trainIdx]),
+        (pointsA[matched_keypoint[1].queryIdx],
+         pointsB[matched_keypoint[1].trainIdx])
+    ]
+    ## populate matrix & vector
+    for i in range(2):
+        u, v = points[i][0].pt # input
+        A[i * 2, :] =  [u, -v, 1, 0]
+        A[i * 2 + 1, :] = [v, u, 0, 1]
+        u_dash, v_dash = points[i][1].pt # expected output
+        b[i * 2] = u_dash
+        b[i * 2 + 1] = v_dash
+    # solve
+    x, residuals, rank, singular_values = np.linalg.lstsq(A, b)
+    assert len(x) == 4
+    ## create actual transformation matrix
+    a, b, c, d = x[0][0], x[1][0], x[2][0], x[3][0]
+    M = np.array([
+        [a, -b, c],
+        [b, a, d]
+    ])
+    def transform(point):
+        homo_point = np.append(point, 1)
+        row_vector = homo_point[np.newaxis].T
+        result = M @ row_vector
+        return result[0][0], result[1][0]
+    #print("M in this iteration is ", M)
+    return transform
+
+def similarity_from_inliers(inliers, pointsA, pointsB):
+    ## 1st step: solve linear equation for 4 variables
+    A = np.zeros((len(inliers) * 2, 4))
+    b = np.zeros((len(inliers) * 2, 1))
+    points = []
+    for inlier in inliers:
+        points.append(
+            (pointsA[inlier.queryIdx].pt,
+             pointsB[inlier.trainIdx].pt)
+        )
+    ## populate matrix & vector
+    for i in range(len(points)):
+        u, v = points[i][0]
+        A[i * 2, :] = [u, -v, 1, 0]
+        A[i * 2 + 1, :] = [v, u, 0, 1]
+        u_dash, v_dash = points[i][1]
+        b[i * 2] = u_dash
+        b[i * 2 + 1] = v_dash
+    # solve
+    x, residuals, rank, singular_values = np.linalg.lstsq(A, b)
+    assert len(x) == 4
+    ## create actual transformation matrix
+    a, b, c, d = x[0][0], x[1][0], x[2][0], x[3][0]
+    M = np.array([
+        [a, -b, c],
+        [b, a, d]
+    ])
+
+    def transform(point):
+        homo_point = np.append(point, 1)
+        row_vector = homo_point[np.newaxis].T
+        result = M @ row_vector
+        return result[0][0], result[1][0]
+
+    return transform, M
+
+def ransac_similarity(matched_keypoints,
+                     pointsA, pointsB,
+                     desired_confidence=0.99,
+                     tolerance=2000):
+    best_match, best_transform, inliers, outliers = ransac_get_inliers(matched_keypoints,
+                                                                       pointsA,
+                                                                       pointsB,
+                                                                       get_transform_similarity,
+                                                                       2,
+                                                                       desired_confidence=desired_confidence,
+                                                                       tolerance=tolerance)
+    best_transform, M = similarity_from_inliers(inliers, pointsA, pointsB)
+    print(M)
     return best_transform, inliers, outliers
