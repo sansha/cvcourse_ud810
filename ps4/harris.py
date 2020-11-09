@@ -90,10 +90,10 @@ def find_corner_in_harris(img, threshold=0.1, radius=9):
     #save_normalized("max.png", max)
     return max
 
-def get_list_from_corner_img(img, thresh = 1.0):
+def get_list_from_corner_img(img, thresh = 0.0):
     corners = []
-    for i in img.shape[0]:
-        for j in img.shape[1]:
-            if img[i, j] >= thresh:
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            if img[i, j] > thresh:
                 corners.append((i, j))
     return corners

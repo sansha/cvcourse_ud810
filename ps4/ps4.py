@@ -1,6 +1,7 @@
 import harris as h
 import cv2
 import numpy as np
+import sift
 
 def save_normalized(filename, img, float_normalize=True):
     if float_normalize:
@@ -33,7 +34,7 @@ def task1_a():
 gauss_window_size = 5
 h_moment_window_size = 7
 def task1_b():
-    recompute = True
+    recompute = False
     check = cv2.imread("input/check.bmp")
     check_rot = cv2.imread("input/check_rot.bmp")
     transA = cv2.imread("input/transA.jpg")
@@ -49,9 +50,11 @@ def task1_b():
     transB = cv2.cvtColor(transB, cv2.COLOR_BGR2GRAY)
     simA = cv2.cvtColor(simA, cv2.COLOR_BGR2GRAY)
     simB = cv2.cvtColor(simB, cv2.COLOR_BGR2GRAY)
+
+    fnames = ["check", "check_rot", "transA", "transB", "simA", "simB"]
+    input = [check, check_rot, transA, transB, simA, simB]
     if recompute:
-        fnames = ["check", "check_rot", "transA", "transB", "simA", "simB"]
-        input = [check, check_rot, transA, transB, simA, simB]
+
         for i in range(4, len(fnames)):
             filename = "output/" + fnames[i] + "_harris"
             print("calculate ", filename)
@@ -90,5 +93,49 @@ def task1_b():
 
     #transB_harris = h.compute_harris(transB)
 
+# def mark_harris_corners(fname, threshold, radius):
+#     basename = "output/harris_imgs/" + fname + "_harris"
+#     harris = np.loadtxt(basename + ".txt")
+#     gradx = np.loadtxt(basename + "_gradx.txt")
+#     grady = np.loadtxt(basename + "_grady.txt")
+#
+#     corner_matrix = h.find_corner_in_harris(harris, threshold=threshold, radius=radius)
+#     raw_img = cv2.imread("input/" + fname + ".jpg")
+#     _, corners = cv2.threshold((corner_matrix * 255.0).astype('uint8'), 1, 255, cv2.THRESH_BINARY)
+#     raw_img //= 2
+#     raw_img[:,:, 1] += corners
+#     cv2.imwrite("output/" + fname + "_harris_marked.png", corners)
+
+
+
+
+
+
+def task2_a():
+    check = cv2.imread("input/check.bmp")
+    check_rot = cv2.imread("input/check_rot.bmp")
+    transA = cv2.imread("input/transA.jpg")
+    transB = cv2.imread("input/transB.jpg")
+    simA = cv2.imread("input/simA.jpg")
+    simB = cv2.imread("input/simB.jpg")
+    fnames = ["check", "check_rot", "transA", "transB", "simA", "simB"]
+    input = [check, check_rot, transA, transB, simA, simB]
+    for i in range(len(fnames)):
+        sift.do_the_keypoint_thing(fnames[i], input[i])
+
+
+def task2_b():
+    check = cv2.imread("input/check.bmp")
+    check_rot = cv2.imread("input/check_rot.bmp")
+    transA = cv2.imread("input/transA.jpg")
+    transB = cv2.imread("input/transB.jpg")
+    simA = cv2.imread("input/simA.jpg")
+    simB = cv2.imread("input/simB.jpg")
+    fname_pairs = [("check", "check_rot"), ("transA", "transB"), ("simA", "simB")]
+    input_pairs = [(check, check_rot), (transA, transB), (simA, simB)]
+    for i in range(len(fname_pairs)):
+        sift.calc_matching_pairs(fname_pairs[i], input_pairs[i])
+
+
 #task1_a()
-task1_b()
+task2_b()
