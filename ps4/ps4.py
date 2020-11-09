@@ -153,19 +153,20 @@ def task3_a():
     cv2.imwrite("output/ransac/transA_outliers.png", match_img)
 
 
-def task3_a2():  # TODO
+def task3_a2():
     transA = cv2.imread("input/check.bmp")
     transB = cv2.imread("input/check_rot.bmp")
     matches, A_points, B_points = sift.calc_matching_pairs(("check", "check_rot"), (transA, transB))
     np.save("output/matches/check.txt", matches)
     np.save("output/matches/check_points", A_points)
     np.save("output/matches/check_rot_points", B_points)
-    best_transform, inliers, outliers = ransac.ransac_transform(matches, pointsA=A_points, pointsB=B_points,
-                                                                tolerance=5000)
-    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
-    cv2.imwrite("output/ransac/check_inliers.png", match_img)
-    match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
-    cv2.imwrite("output/ransac/check_outliers.png", match_img)
+    for tolerance in [200]:
+        best_transform, inliers, outliers, M = ransac.ransac_similarity(matches, pointsA=A_points, pointsB=B_points,
+                                                                    tolerance=tolerance)
+        match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
+        cv2.imwrite("output/ransac/check/check_inliers" + str(tolerance) + ".png", match_img)
+        match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
+        cv2.imwrite("output/ransac/check/check_outliers" + str(tolerance) + ".png", match_img)
 
 
 def task3_b():
@@ -182,15 +183,26 @@ def task3_b():
         A_points = np.load("output/matches/simA_points")
         B_points = np.load("output/matches/simB_points")
 
-    for tolerance in [10000, 5000, 4000, 3000, 2000, 1000, 500, 200]:
-        best_transform, inliers, outliers = ransac.ransac_similarity(matches, pointsA=A_points, pointsB=B_points,
+    for tolerance in [10000, 5000, 2000, 700, 200]:
+        best_transform, inliers, outliers, M = ransac.ransac_similarity(matches, pointsA=A_points, pointsB=B_points,
                                                                     tolerance=tolerance)
         match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(inliers), None)
         cv2.imwrite("output/ransac/simA_inliers" + str(tolerance) + ".png", match_img)
         match_img = cv2.drawMatches(transA, A_points, transB, B_points, list(outliers), None)
         cv2.imwrite("output/ransac/simB_outliers" + str(tolerance) + ".png", match_img)
+        a, b , _ = transB.shape
+        mixed = np.zeros_like(transA)
 
+        transA_grey = cv2.cvtColor(transA, cv2.COLOR_BGR2GRAY)
+        transB_grey = cv2.cvtColor(transB, cv2.COLOR_BGR2GRAY)
+
+        warped = cv2.warpAffine(transB_grey, M, (b, a), flags=cv2.WARP_INVERSE_MAP)
+        cv2.imwrite("output/ransac/simB_warped" + str(tolerance) + ".png", warped)
+        mixed[:,:,0] = transA_grey
+        mixed[:,:,1] = warped
+        cv2.imwrite("output/ransac/sim_merged" + str(tolerance) + ".png", mixed)
 
 # task1_a()
-# task2_b()
+#task2_b()
+#task3_a2()
 task3_b()

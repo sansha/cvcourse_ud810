@@ -37,7 +37,6 @@ def ransac_get_inliers(matched_keypoints,
     best_transform = None
     inliers, outliers = {}, {}
     N = np.inf
-    abort_printed = False
     while N > num_samples:
         # get samples
         matches = np.random.choice(matched_keypoints, num_samples_per_draw, replace=True)
@@ -56,11 +55,7 @@ def ransac_get_inliers(matched_keypoints,
             # update N
             outlier_percentage = len(outliers) / (len(inliers) + len(outliers))
             print("new outlier percentage:", outlier_percentage)
-            N = calc_N(desired_confidence, outlier_percentage, 2)
-        if N <= num_samples and not abort_printed:
-            print("would have aborted after", num_samples, "iterations")
-            print("with num inliers:", len(best_inliers), "of", len(matched_keypoints))
-            abort_printed = True
+            N = calc_N(desired_confidence, outlier_percentage, num_samples_per_draw * 2)
     print("found result after", num_samples, "iterations")
     print("num inliers:", len(best_inliers), "of", len(matched_keypoints))
     return best_match, best_transform, best_inliers, best_outliers
@@ -199,4 +194,6 @@ def ransac_similarity(matched_keypoints,
                                                                        tolerance=tolerance)
     best_transform, M = similarity_from_inliers(inliers, pointsA, pointsB)
     print(M)
-    return best_transform, inliers, outliers
+    inliers, outliers = calc_inliers_outliers(best_transform, matched_keypoints, pointsA, pointsB, tolerance)
+    print("with the new ssd transform we get: (inliers / outliers", len(inliers), len(outliers))
+    return best_transform, inliers, outliers, M
